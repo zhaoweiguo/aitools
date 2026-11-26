@@ -24,14 +24,6 @@ CSS, JavaScript, and the favicon inlined for single-file static hosting.
 
 Public preview: <https://c8727w.csb.app/>
 
-## Custom domain
-
-GitHub Pages serves this project at `zhaoweiguo.github.io/aitools/` and is
-configured to use `aitool.zhaoweiguo.com` (see `public/CNAME`). The Aliyun DNS
-record for `aitool` must be a CNAME pointing to `zhaoweiguo.github.io`; do not
-use an A record for this account subdomain. HTTPS is issued by GitHub Pages
-after DNS propagation.
-
 ## Supported input
 
 - Standard ATIF JSON documents
