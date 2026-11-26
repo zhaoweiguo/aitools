@@ -7,6 +7,7 @@ import {
   filterSteps,
   formatCost,
   formatDuration,
+  getBundleStats,
   parseAtifText,
 } from "../src/lib/atif.js";
 
@@ -74,6 +75,15 @@ test("formats metrics and filters steps by tool content", () => {
   const matches = filterSteps(bundle.primary.steps, { query: "stripe-signature" });
   assert.ok(matches.length >= 1);
   assert.ok(matches.every((step) => step.source === "agent"));
+});
+
+test("counts primary and nested subagent steps for navigation badges", () => {
+  const bundle = parseAtifText(JSON.stringify(demo));
+  assert.deepEqual(getBundleStats(bundle), {
+    steps: 14,
+    toolCalls: 11,
+    subagents: 1,
+  });
 });
 
 test("rejects invalid JSON and non-ATIF objects with actionable messages", () => {

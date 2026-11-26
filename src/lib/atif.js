@@ -438,6 +438,29 @@ export function allToolCalls(trajectory) {
   );
 }
 
+export function getBundleStats(bundle) {
+  const trajectories = bundle?.trajectories || [];
+  const visits = new Set();
+  let steps = 0;
+  let toolCalls = 0;
+  let subagents = 0;
+
+  const visit = (trajectory) => {
+    if (!trajectory || visits.has(trajectory)) return;
+    visits.add(trajectory);
+    steps += trajectory.steps.length;
+    toolCalls += trajectory.steps.reduce(
+      (total, step) => total + step.tools.length,
+      0,
+    );
+    subagents += trajectory.subagents.length;
+    trajectory.subagents.forEach(visit);
+  };
+
+  trajectories.forEach(visit);
+  return { steps, toolCalls, subagents };
+}
+
 export function timelineBounds(steps) {
   const values = steps
     .map((step) => new Date(step.timestamp).getTime())

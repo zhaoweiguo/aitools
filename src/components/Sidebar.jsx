@@ -10,7 +10,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { formatNumber, formatDateTime } from "../lib/atif.js";
+import { formatNumber, formatDateTime, getBundleStats } from "../lib/atif.js";
 
 const NAV_ITEMS = [
   { id: "timeline", label: "时间线", icon: History, hint: "Steps" },
@@ -33,6 +33,7 @@ export default function Sidebar({
   onCloseMobile,
 }) {
   const toolCount = trajectory.metrics.toolCalls;
+  const bundleStats = getBundleStats(bundle);
   return (
     <>
       {mobileOpen && (
@@ -111,10 +112,10 @@ export default function Sidebar({
                   <Icon size={17} />
                   <span>{item.label}</span>
                   <small>
-                    {item.id === "timeline" && trajectory.steps.length}
-                    {item.id === "tools" && toolCount}
-                    {item.id === "metrics" && trajectory.steps.filter((s) => s.metrics).length}
-                    {item.id === "subagents" && trajectory.subagents.length}
+                    {item.id === "timeline" && bundleStats.steps}
+                    {item.id === "tools" && bundleStats.toolCalls}
+                    {item.id === "metrics" && bundleStats.steps}
+                    {item.id === "subagents" && bundleStats.subagents}
                   </small>
                 </button>
               );
