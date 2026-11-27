@@ -86,6 +86,113 @@ export function explainJsonError(error, source) {
   };
 }
 
+export function formatInvalidJsonStructure(input, indentSize = 2) {
+  const source = stripBom(input);
+  const structural = new Set(["{", "}", "[", "]", ",", ":"]);
+  const tokens = [];
+  let index = 0;
+
+  while (index < source.length) {
+    const character = source[index];
+    if (/\s/.test(character)) {
+      index += 1;
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      const quote = character;
+      const start = index;
+      index += 1;
+      while (index < source.length) {
+        if (source[index] === "\\") {
+          index += 2;
+          continue;
+        }
+        if (source[index] === quote) {
+          index += 1;
+          break;
+        }
+        index += 1;
+      }
+      tokens.push({ type: "value", value: source.slice(start, index) });
+      continue;
+    }
+
+    if (structural.has(character)) {
+      tokens.push({ type: "symbol", value: character });
+      index += 1;
+      continue;
+    }
+
+    const start = index;
+    while (
+      index < source.length &&
+      !/\s/.test(source[index]) &&
+      !structural.has(source[index]) &&
+      source[index] !== '"' &&
+      source[index] !== "'"
+    ) {
+      index += 1;
+    }
+    tokens.push({ type: "value", value: source.slice(start, index) });
+  }
+
+  const indent = " ".repeat(Math.max(1, Number(indentSize) || 2));
+  const lines = [];
+  let depth = 0;
+  let current = "";
+
+  const flush = () => {
+    if (current.trim()) lines.push(current.trimEnd());
+    current = "";
+  };
+
+  const appendValue = (value) => {
+    if (!current.trim()) current = `${indent.repeat(depth)}${value}`;
+    else current += `${current.endsWith(": ") ? "" : " "}${value}`;
+  };
+
+  tokens.forEach((token, tokenIndex) => {
+    if (token.consumed) return;
+
+    if (token.type === "value") {
+      appendValue(token.value);
+      return;
+    }
+
+    if (token.value === ":") {
+      current = `${current.trimEnd()}: `;
+      return;
+    }
+
+    if (token.value === ",") {
+      current += ",";
+      flush();
+      return;
+    }
+
+    if (token.value === "{" || token.value === "[") {
+      current += token.value;
+      flush();
+      depth += 1;
+      return;
+    }
+
+    flush();
+    depth = Math.max(0, depth - 1);
+    current = `${indent.repeat(depth)}${token.value}`;
+    const next = tokens[tokenIndex + 1];
+    if (next?.value === ",") {
+      current += ",";
+      next.consumed = true;
+    }
+    flush();
+  });
+  flush();
+
+  return lines.join("\n");
+}
+
 export function formatJson(input, options = {}) {
   const indent = Number(options.indent ?? 2);
   const minify = Boolean(options.minify);
@@ -132,15 +239,17 @@ export function formatJson(input, options = {}) {
         },
       };
     } catch (repairError) {
+      const fallback = formatInvalidJsonStructure(source, indent);
       return {
         ok: false,
         valid: false,
         repaired: false,
+        previewOnly: Boolean(fallback),
         empty: false,
-        formatted: "",
+        formatted: fallback,
         parsed: undefined,
         stats: { ...EMPTY_STATS },
-        bytes: 0,
+        bytes: new TextEncoder().encode(fallback).length,
         error: {
           ...originalError,
           repairMessage:

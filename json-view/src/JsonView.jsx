@@ -119,14 +119,24 @@ function JsonOutput({
         <div className="repair-warning" role="alert">
           <span className="repair-warning-icon"><AlertTriangle size={17} /></span>
           <div>
-            <strong>原 JSON 有语法问题，已生成修复预览</strong>
+            <strong>
+              {result.previewOnly
+                ? "JSON 语法不完整，当前为结构预览"
+                : "原 JSON 有语法问题，已生成修复预览"}
+            </strong>
             <p>{result.error.message}</p>
             {result.error.line && (
               <code>原内容第 {result.error.line} 行，第 {result.error.column} 列</code>
             )}
-            <span>下方结果经过自动修复，可能与原始内容不同。</span>
+            <span>
+              {result.previewOnly
+                ? "自动修复无法完成，下方仅按括号结构排版，内容未经校验。"
+                : "下方结果经过自动修复，可能与原始内容不同。"}
+            </span>
           </div>
-          <button type="button" onClick={onApplyRepair}>采用修复结果</button>
+          {result.repaired && (
+            <button type="button" onClick={onApplyRepair}>采用修复结果</button>
+          )}
         </div>
       )}
       <div className={`formatted-code ${isPending ? "pending" : ""}`}>
@@ -301,7 +311,9 @@ export default function JsonView() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${base}.formatted.json`;
+    anchor.download = result.previewOnly
+      ? `${base}.preview.txt`
+      : `${base}.formatted.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -339,7 +351,9 @@ export default function JsonView() {
   const inputBytes = new TextEncoder().encode(source).length;
   const status = result.error
     ? result.formatted
-      ? { label: "已修复预览", tone: "warning" }
+      ? result.repaired
+        ? { label: "已修复预览", tone: "warning" }
+        : { label: "结构预览", tone: "warning" }
       : { label: "需要修正", tone: "error" }
     : isFormatting
       ? { label: "格式化中", tone: "pending" }

@@ -4,6 +4,7 @@ import {
   countLines,
   explainJsonError,
   findJsonFoldRanges,
+  formatInvalidJsonStructure,
   formatJson,
   jsonTypeLabel,
   stripBom,
@@ -70,12 +71,22 @@ test("repairs common syntax mistakes and keeps the strict error warning", () => 
   });
 });
 
-test("returns no repaired output when JSON cannot be recovered", () => {
-  const result = formatJson("}{");
+test("falls back to a structural preview when JSON cannot be recovered", () => {
+  const result = formatJson("}{\"broken\": [1, 2");
   assert.equal(result.valid, false);
   assert.equal(result.repaired, false);
-  assert.equal(result.formatted, "");
+  assert.equal(result.previewOnly, true);
+  assert.ok(result.formatted);
+  assert.match(result.formatted, /\{/);
+  assert.match(result.formatted, /"broken": \[/);
   assert.ok(result.error);
+});
+
+test("structurally formats malformed JSON without dropping string tokens", () => {
+  const preview = formatInvalidJsonStructure('}{"text":"{keep}","items":[1,2');
+  assert.equal(preview.split("\n")[0], "}");
+  assert.match(preview, /"text": "\{keep\}"/);
+  assert.match(preview, /"items": \[/);
 });
 
 test("finds multiline object and array ranges for folding", () => {
