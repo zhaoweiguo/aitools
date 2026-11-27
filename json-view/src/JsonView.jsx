@@ -3,11 +3,13 @@ import {
   ArrowLeft,
   Braces,
   Check,
+  ChevronDown,
   Copy,
   Download,
   FileJson2,
   LockKeyhole,
   Minimize2,
+  PanelRightOpen,
   Sparkles,
   Trash2,
   Upload,
@@ -133,6 +135,7 @@ export default function JsonView() {
   const [isFormatting, setIsFormatting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [outputCollapsed, setOutputCollapsed] = useState(false);
   const [notice, setNotice] = useState("");
   const inputRef = useRef(null);
   const dragDepth = useRef(0);
@@ -345,6 +348,17 @@ export default function JsonView() {
             </button>
             <button
               type="button"
+              className="result-toggle"
+              onClick={() => setOutputCollapsed((value) => !value)}
+              aria-controls="json-output-pane"
+              aria-expanded={!outputCollapsed}
+              title={outputCollapsed ? "展开格式化结果" : "收起格式化结果"}
+            >
+              {outputCollapsed ? <PanelRightOpen size={14} /> : <ChevronDown size={14} />}
+              {outputCollapsed ? "展开结果" : "收起结果"}
+            </button>
+            <button
+              type="button"
               onClick={copyFormatted}
               disabled={!result.formatted}
               title="复制格式化结果"
@@ -373,7 +387,7 @@ export default function JsonView() {
           </div>
         </div>
 
-        <div className="json-workspace">
+        <div className={`json-workspace ${outputCollapsed ? "output-collapsed" : ""}`}>
           <section className="json-pane source-pane">
             <div className="pane-heading">
               <div>
@@ -398,35 +412,48 @@ export default function JsonView() {
             </div>
           </section>
 
-          <section className="json-pane output-pane">
-            <div className="pane-heading">
-              <div>
-                <span className="pane-label">OUTPUT</span>
-                <strong>格式化结果</strong>
+          {!outputCollapsed && (
+            <section className="json-pane output-pane" id="json-output-pane">
+              <div className="pane-heading">
+                <div>
+                  <span className="pane-label">OUTPUT</span>
+                  <strong>格式化结果</strong>
+                </div>
+                <div className="output-heading-actions">
+                  <span className={`validation-badge ${status.tone}`}>
+                    <i />
+                    {status.label}
+                  </span>
+                  <button
+                    type="button"
+                    className="pane-collapse-toggle"
+                    onClick={() => setOutputCollapsed(true)}
+                    title="收起格式化结果"
+                    aria-label="收起格式化结果"
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
               </div>
-              <span className={`validation-badge ${status.tone}`}>
-                <i />
-                {status.label}
-              </span>
-            </div>
-            <div className="json-output-scroll">
-              <JsonOutput
-                result={result}
-                isPending={isFormatting}
-                onApplyRepair={applyRepairResult}
-              />
-            </div>
-            <div className="pane-footer result-stats">
-              <span>{result.empty ? "0 行" : `${countLines(result.formatted)} 行`}</span>
-              <span>{result.empty ? "0 bytes" : `${result.bytes.toLocaleString("zh-CN")} bytes`}</span>
-              {!result.empty && !result.error && (
-                <>
-                  <span>{jsonTypeLabel(result.parsed)}</span>
-                  <span>{result.stats.keys} keys</span>
-                </>
-              )}
-            </div>
-          </section>
+              <div className="json-output-scroll">
+                <JsonOutput
+                  result={result}
+                  isPending={isFormatting}
+                  onApplyRepair={applyRepairResult}
+                />
+              </div>
+              <div className="pane-footer result-stats">
+                <span>{result.empty ? "0 行" : `${countLines(result.formatted)} 行`}</span>
+                <span>{result.empty ? "0 bytes" : `${result.bytes.toLocaleString("zh-CN")} bytes`}</span>
+                {!result.empty && !result.error && (
+                  <>
+                    <span>{jsonTypeLabel(result.parsed)}</span>
+                    <span>{result.stats.keys} keys</span>
+                  </>
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
         <div className="json-bottom-row">
