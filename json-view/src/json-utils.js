@@ -1,3 +1,5 @@
+import { jsonrepair } from "jsonrepair";
+
 const EMPTY_STATS = Object.freeze({
   type: "—",
   nodes: 0,
@@ -92,6 +94,8 @@ export function formatJson(input, options = {}) {
   if (!source.trim()) {
     return {
       ok: true,
+      valid: true,
+      repaired: false,
       empty: true,
       formatted: "",
       parsed: undefined,
@@ -101,29 +105,63 @@ export function formatJson(input, options = {}) {
     };
   }
 
+  let parsed;
   try {
-    const parsed = JSON.parse(source);
-    const formatted = minify ? JSON.stringify(parsed) : JSON.stringify(parsed, null, indent);
-    return {
-      ok: true,
-      empty: false,
-      formatted,
-      parsed,
-      stats: summarizeJson(parsed),
-      bytes: new TextEncoder().encode(formatted).length,
-      error: null,
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      empty: false,
-      formatted: "",
-      parsed: undefined,
-      stats: { ...EMPTY_STATS },
-      bytes: 0,
-      error: explainJsonError(error, source),
-    };
+    parsed = JSON.parse(source);
+  } catch (strictError) {
+    const originalError = explainJsonError(strictError, source);
+    try {
+      const repairedSource = jsonrepair(source);
+      const repairedParsed = JSON.parse(repairedSource);
+      const formatted = minify
+        ? JSON.stringify(repairedParsed)
+        : JSON.stringify(repairedParsed, null, indent);
+      return {
+        ok: false,
+        valid: false,
+        repaired: true,
+        empty: false,
+        formatted,
+        parsed: repairedParsed,
+        repairedSource,
+        stats: summarizeJson(repairedParsed),
+        bytes: new TextEncoder().encode(formatted).length,
+        error: {
+          ...originalError,
+          message: originalError.message,
+        },
+      };
+    } catch (repairError) {
+      return {
+        ok: false,
+        valid: false,
+        repaired: false,
+        empty: false,
+        formatted: "",
+        parsed: undefined,
+        stats: { ...EMPTY_STATS },
+        bytes: 0,
+        error: {
+          ...originalError,
+          repairMessage:
+            repairError instanceof Error ? repairError.message : String(repairError),
+        },
+      };
+    }
   }
+
+  const formatted = minify ? JSON.stringify(parsed) : JSON.stringify(parsed, null, indent);
+  return {
+    ok: true,
+    valid: true,
+    repaired: false,
+    empty: false,
+    formatted,
+    parsed,
+    stats: summarizeJson(parsed),
+    bytes: new TextEncoder().encode(formatted).length,
+    error: null,
+  };
 }
 
 export function jsonTypeLabel(value) {

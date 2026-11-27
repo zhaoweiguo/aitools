@@ -10,7 +10,7 @@ A collection of browser-local developer tools, published at
 | `/` | Tool portal and index for future utilities |
 | `/entry/` | Directory alias of the tool portal |
 | `/atif-view/` | ATIF v1.x trajectory viewer |
-| `/json-view/` | JSON formatter, validator, and inspector |
+| `/json-view/` | JSON formatter, validator, and tolerant repair preview |
 
 All file parsing happens in the browser. Uploaded content is not sent to an
 application server.

@@ -44,13 +44,37 @@ test("summarizes nested object and array structure", () => {
   });
 });
 
-test("reports line and column for malformed JSON", () => {
+test("reports line and column for malformed but repairable JSON", () => {
   const source = '{\n  "ok": true,\n  "broken":\n}';
   const result = formatJson(source);
   assert.equal(result.ok, false);
+  assert.equal(result.valid, false);
+  assert.equal(result.repaired, true);
+  assert.ok(result.formatted.includes('"ok": true'));
   assert.equal(result.error.line, 4);
   assert.equal(typeof result.error.column, "number");
   assert.ok(result.error.column > 0);
+});
+
+test("repairs common syntax mistakes and keeps the strict error warning", () => {
+  const source = "{name: 'AITools', items: [1, 2,], enabled: true,}";
+  const result = formatJson(source);
+  assert.equal(result.valid, false);
+  assert.equal(result.repaired, true);
+  assert.ok(result.error);
+  assert.deepEqual(JSON.parse(result.formatted), {
+    name: "AITools",
+    items: [1, 2],
+    enabled: true,
+  });
+});
+
+test("returns no repaired output when JSON cannot be recovered", () => {
+  const result = formatJson("}{");
+  assert.equal(result.valid, false);
+  assert.equal(result.repaired, false);
+  assert.equal(result.formatted, "");
+  assert.ok(result.error);
 });
 
 test("handles empty input, BOM, line counts, and primitive types", () => {

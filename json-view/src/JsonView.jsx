@@ -47,21 +47,24 @@ function HighlightedLine({ line }) {
   return nodes;
 }
 
-function JsonOutput({ result, isPending }) {
+function JsonOutput({ result, isPending, onApplyRepair }) {
   const lines = useMemo(
     () => (result.formatted ? result.formatted.split("\n") : []),
     [result.formatted],
   );
 
-  if (result.error) {
+  if (!result.formatted) {
     return (
       <div className="json-error-state" role="alert">
         <span className="json-error-icon"><AlertTriangle size={20} /></span>
         <div>
           <strong>JSON 语法错误</strong>
-          <p>{result.error.message}</p>
-          {result.error.line && (
+          <p>{result.error?.message || "无法解析这份 JSON。"}</p>
+          {result.error?.line && (
             <code>第 {result.error.line} 行，第 {result.error.column} 列</code>
+          )}
+          {result.error?.repairMessage && (
+            <p>自动修复也未成功：{result.error.repairMessage}</p>
           )}
         </div>
       </div>
@@ -79,18 +82,34 @@ function JsonOutput({ result, isPending }) {
   }
 
   return (
-    <div className={`formatted-code ${isPending ? "pending" : ""}`}>
-      {lines.length <= 5000 ? (
-        lines.map((line, index) => (
-          <div className="formatted-line" key={index}>
-            <span className="formatted-line-number">{index + 1}</span>
-            <code><HighlightedLine line={line} /></code>
+    <>
+      {result.error && (
+        <div className="repair-warning" role="alert">
+          <span className="repair-warning-icon"><AlertTriangle size={17} /></span>
+          <div>
+            <strong>原 JSON 有语法问题，已生成修复预览</strong>
+            <p>{result.error.message}</p>
+            {result.error.line && (
+              <code>原内容第 {result.error.line} 行，第 {result.error.column} 列</code>
+            )}
+            <span>下方结果经过自动修复，可能与原始内容不同。</span>
           </div>
-        ))
-      ) : (
-        <pre>{result.formatted}</pre>
+          <button type="button" onClick={onApplyRepair}>采用修复结果</button>
+        </div>
       )}
-    </div>
+      <div className={`formatted-code ${isPending ? "pending" : ""}`}>
+        {lines.length <= 5000 ? (
+          lines.map((line, index) => (
+            <div className="formatted-line" key={index}>
+              <span className="formatted-line-number">{index + 1}</span>
+              <code><HighlightedLine line={line} /></code>
+            </div>
+          ))
+        ) : (
+          <pre>{result.formatted}</pre>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -235,10 +254,19 @@ export default function JsonView() {
     setNotice("");
   }
 
+  function applyRepairResult() {
+    if (!result.formatted) return;
+    setSource(result.formatted);
+    setFileName("");
+    setNotice("已采用修复后的 JSON");
+  }
+
   const inputLines = countLines(source);
   const inputBytes = new TextEncoder().encode(source).length;
   const status = result.error
-    ? { label: "需要修正", tone: "error" }
+    ? result.formatted
+      ? { label: "已修复预览", tone: "warning" }
+      : { label: "需要修正", tone: "error" }
     : isFormatting
       ? { label: "格式化中", tone: "pending" }
       : result.empty
@@ -382,7 +410,11 @@ export default function JsonView() {
               </span>
             </div>
             <div className="json-output-scroll">
-              <JsonOutput result={result} isPending={isFormatting} />
+              <JsonOutput
+                result={result}
+                isPending={isFormatting}
+                onApplyRepair={applyRepairResult}
+              />
             </div>
             <div className="pane-footer result-stats">
               <span>{result.empty ? "0 行" : `${countLines(result.formatted)} 行`}</span>
