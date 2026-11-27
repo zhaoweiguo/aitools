@@ -22,7 +22,19 @@ npm run build:standalone
 `build:standalone` writes `standalone/index.html`, a self-contained build with
 CSS, JavaScript, and the favicon inlined for single-file static hosting.
 
-Public preview: <https://atif-lens.netlify.app/>
+Public Netlify origin: <https://atif-lens-aitool.netlify.app/>
+
+Custom domain: `aitool.zhaoweiguo.com`
+
+The Netlify project is already configured for the custom domain. At the
+authoritative DNS provider, configure:
+
+```text
+Host: aitool
+Type: CNAME
+Value: atif-lens-aitool.netlify.app
+TTL: 600
+```
 
 ## Supported input
 
