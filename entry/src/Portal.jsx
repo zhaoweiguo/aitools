@@ -1,6 +1,7 @@
 import {
   ArrowUpRight,
   Braces,
+  Clock3,
   FileText,
   GitBranch,
   LockKeyhole,
@@ -45,6 +46,18 @@ const TOOLS = [
     icon: FileText,
     tone: "blue",
     tags: ["实时预览", "GFM", "文件导入", "完全本地"],
+  },
+  {
+    id: "time-view",
+    number: "04",
+    title: "Time View",
+    category: "Date & calendar",
+    description:
+      "在日期时间与 Unix 时间戳之间转换，并支持公历、农历和闰月双向换算。",
+    href: "/time-view/",
+    icon: Clock3,
+    tone: "violet",
+    tags: ["Unix 时间戳", "当前时间", "公历", "农历"],
   },
 ];
 
@@ -130,6 +143,27 @@ function MarkdownPreview() {
   );
 }
 
+function TimePreview() {
+  return (
+    <div className="preview-stage time-preview" aria-hidden="true">
+      <div className="preview-topline">
+        <span className="window-dots"><i /><i /><i /></span>
+        <span>Asia/Shanghai</span>
+        <span className="preview-live">LIVE</span>
+      </div>
+      <div className="mini-time-main">
+        <span>2026-11-27 · 星期五</span>
+        <strong>14:32:08</strong>
+        <small>农历 十月初八</small>
+      </div>
+      <div className="mini-time-values">
+        <span><small>SECONDS</small><code>1795761128</code></span>
+        <span><small>MILLIS</small><code>1795761128000</code></span>
+      </div>
+    </div>
+  );
+}
+
 function ToolCard({ tool }) {
   const Icon = tool.icon;
   return (
@@ -152,6 +186,7 @@ function ToolCard({ tool }) {
       {tool.id === "atif-view" && <AtifPreview />}
       {tool.id === "json-view" && <JsonPreview />}
       {tool.id === "markdown-view" && <MarkdownPreview />}
+      {tool.id === "time-view" && <TimePreview />}
       <div className="tool-tags">
         {tool.tags.map((tag) => (
           <span key={tag}>{tag}</span>

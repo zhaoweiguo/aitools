@@ -265,7 +265,7 @@ textarea:focus-visible {
 
 .portal-tools {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -298,6 +298,10 @@ textarea:focus-visible {
 
 .portal-tool-card.blue:hover {
   border-color: #365a74;
+}
+
+.portal-tool-card.violet:hover {
+  border-color: #51436f;
 }
 
 .tool-card-header {
@@ -336,6 +340,12 @@ textarea:focus-visible {
   border-color: #294c64;
 }
 
+.violet .tool-icon-large {
+  color: #b7a3f6;
+  background: #29233d;
+  border-color: #473b63;
+}
+
 .tool-open {
   display: inline-flex;
   align-items: center;
@@ -355,6 +365,10 @@ textarea:focus-visible {
 
 .portal-tool-card.blue:hover .tool-open {
   color: var(--blue);
+}
+
+.portal-tool-card.violet:hover .tool-open {
+  color: #b7a3f6;
 }
 
 .tool-card-copy {
@@ -662,6 +676,68 @@ textarea:focus-visible {
 .markdown-mini-page code em {
   color: #f1bd70;
   font-style: normal;
+}
+
+.mini-time-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 18px 13px;
+}
+
+.mini-time-main > span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 7px;
+}
+
+.mini-time-main > strong {
+  margin-top: 3px;
+  font-family: var(--mono);
+  font-size: 35px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.05em;
+}
+
+.mini-time-main > small {
+  margin-top: 4px;
+  color: #a792ec;
+  font-size: 8px;
+}
+
+.mini-time-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 15px;
+  overflow: hidden;
+  background: #202c35;
+  border: 1px solid #202c35;
+  border-radius: 4px;
+}
+
+.mini-time-values > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 7px 8px;
+  background: #0f171e;
+}
+
+.mini-time-values small {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 6px;
+}
+
+.mini-time-values code {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--soft);
+  font-family: var(--mono);
+  font-size: 8px;
+  text-overflow: ellipsis;
 }
 
 .tool-tags {

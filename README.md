@@ -12,6 +12,7 @@ A collection of browser-local developer tools, published at
 | `/atif-view/` | ATIF v1.x trajectory viewer |
 | `/json-view/` | JSON formatter, validator, and tolerant repair preview |
 | `/markdown-view/` | Markdown editor and live GFM preview |
+| `/time-view/` | Unix timestamp, Gregorian, and lunar calendar converter |
 
 All file parsing happens in the browser. Uploaded content is not sent to an
 application server.
@@ -23,6 +24,7 @@ entry/          Portal source
 atif-view/      Existing trajectory viewer
 json-view/      JSON formatter
 markdown-view/  Markdown editor and live preview
+time-view/      Timestamp and calendar converter
 public/         Shared static assets
 ```
 
@@ -43,6 +45,7 @@ Local routes:
 - <http://localhost:5173/atif-view/>
 - <http://localhost:5173/json-view/>
 - <http://localhost:5173/markdown-view/>
+- <http://localhost:5173/time-view/>
 
 ## Verification
 
