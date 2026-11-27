@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   countLines,
   explainJsonError,
+  findJsonFoldRanges,
   formatJson,
   jsonTypeLabel,
   stripBom,
@@ -75,6 +76,29 @@ test("returns no repaired output when JSON cannot be recovered", () => {
   assert.equal(result.repaired, false);
   assert.equal(result.formatted, "");
   assert.ok(result.error);
+});
+
+test("finds multiline object and array ranges for folding", () => {
+  const formatted = JSON.stringify(
+    {
+      state: { diff: { added: [{ kind: "Group" }] } },
+      items: [1, 2],
+    },
+    null,
+    2,
+  );
+  const ranges = findJsonFoldRanges(formatted);
+  assert.ok(ranges.size >= 4);
+  const root = ranges.get(0);
+  assert.equal(root.openChar, "{");
+  assert.equal(root.closeChar, "}");
+  assert.ok(root.endLine > root.startLine);
+});
+
+test("ignores braces inside JSON strings when finding fold ranges", () => {
+  const formatted = JSON.stringify({ value: "{not a container}", nested: [1] }, null, 2);
+  const ranges = findJsonFoldRanges(formatted);
+  assert.equal(ranges.size, 2);
 });
 
 test("handles empty input, BOM, line counts, and primitive types", () => {

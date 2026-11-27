@@ -339,10 +339,6 @@ textarea:focus-visible {
   cursor: default;
 }
 
-.json-toolbar-actions .result-toggle[aria-expanded="false"] {
-  color: var(--amber);
-}
-
 .json-workspace {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
@@ -351,15 +347,6 @@ textarea:focus-visible {
   border: 1px solid var(--line);
   border-radius: 0 0 7px 7px;
   overflow: hidden;
-  transition: grid-template-columns 180ms ease;
-}
-
-.json-workspace.output-collapsed {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.json-workspace.output-collapsed .source-pane {
-  border-right: 0;
 }
 
 .json-pane {
@@ -466,23 +453,23 @@ textarea:focus-visible {
   gap: 7px;
 }
 
-.pane-collapse-toggle {
-  display: grid;
-  place-items: center;
-  width: 25px;
-  height: 25px;
-  padding: 0;
+.fold-all-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
   color: var(--muted);
-  background: transparent;
-  border: 1px solid transparent;
+  background: #10171e;
+  border: 1px solid var(--line);
   border-radius: 3px;
   cursor: pointer;
+  font-family: var(--mono);
+  font-size: 7px;
 }
 
-.pane-collapse-toggle:hover {
+.fold-all-button:hover {
   color: var(--text);
-  background: #1c262e;
-  border-color: var(--line);
+  background: #1a242c;
 }
 
 .validation-badge i {
@@ -600,7 +587,7 @@ textarea:focus-visible {
 
 .formatted-line {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 42px 18px minmax(0, 1fr);
   min-height: 18px;
   padding-right: 18px;
 }
@@ -618,8 +605,37 @@ textarea:focus-visible {
   user-select: none;
 }
 
+.fold-gutter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+}
+
+.fold-toggle {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  color: #5c6b76;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.fold-toggle:hover {
+  color: var(--amber);
+  background: #26301f;
+}
+
+.formatted-line.is-foldable .formatted-line-number {
+  color: #6a7780;
+}
+
 .formatted-line code {
-  padding-left: 13px;
+  padding-left: 9px;
   color: #b8c4cc;
   white-space: pre;
 }

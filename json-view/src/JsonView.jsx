@@ -4,19 +4,19 @@ import {
   Braces,
   Check,
   ChevronDown,
+  ChevronRight,
   Copy,
   Download,
   FileJson2,
   LockKeyhole,
   Minimize2,
-  PanelRightOpen,
   Sparkles,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLines, formatJson, jsonTypeLabel } from "./json-utils.js";
+import { countLines, findJsonFoldRanges, formatJson, jsonTypeLabel } from "./json-utils.js";
 
 const INDENT_OPTIONS = [
   { value: "2", label: "2 空格" },
@@ -49,11 +49,41 @@ function HighlightedLine({ line }) {
   return nodes;
 }
 
-function JsonOutput({ result, isPending, onApplyRepair }) {
+function JsonOutput({
+  result,
+  isPending,
+  onApplyRepair,
+  foldRanges,
+  collapsedLines,
+  onToggleFold,
+}) {
   const lines = useMemo(
     () => (result.formatted ? result.formatted.split("\n") : []),
     [result.formatted],
   );
+  const visibleRows = useMemo(() => {
+    if (!result.formatted || lines.length > 5000) return [];
+    const rows = [];
+    let hiddenUntil = -1;
+
+    lines.forEach((line, index) => {
+      if (index <= hiddenUntil) return;
+      const fold = foldRanges.get(index);
+      const collapsed = Boolean(fold && collapsedLines.has(index));
+      let displayLine = line;
+
+      if (collapsed) {
+        hiddenUntil = fold.endLine;
+        const openIndex = line.lastIndexOf(fold.openChar);
+        const prefix = openIndex >= 0 ? line.slice(0, openIndex) : line;
+        displayLine = `${prefix}${fold.openChar}…${fold.closeChar}${fold.suffix}`;
+      }
+
+      rows.push({ line: displayLine, index, fold, collapsed });
+    });
+
+    return rows;
+  }, [collapsedLines, foldRanges, lines, result.formatted]);
 
   if (!result.formatted) {
     return (
@@ -101,10 +131,25 @@ function JsonOutput({ result, isPending, onApplyRepair }) {
       )}
       <div className={`formatted-code ${isPending ? "pending" : ""}`}>
         {lines.length <= 5000 ? (
-          lines.map((line, index) => (
-            <div className="formatted-line" key={index}>
+          visibleRows.map(({ line, index, fold, collapsed }) => (
+            <div className={`formatted-line ${fold ? "is-foldable" : ""}`} key={index}>
               <span className="formatted-line-number">{index + 1}</span>
-              <code><HighlightedLine line={line} /></code>
+              <span className="fold-gutter">
+                {fold && (
+                  <button
+                    type="button"
+                    className="fold-toggle"
+                    onClick={() => onToggleFold(index)}
+                    aria-expanded={!collapsed}
+                    title={collapsed ? `展开第 ${index + 1} 行内容` : `折叠第 ${index + 1} 行内容`}
+                  >
+                    {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                )}
+              </span>
+              <code>
+                <HighlightedLine line={line} />
+              </code>
             </div>
           ))
         ) : (
@@ -135,10 +180,17 @@ export default function JsonView() {
   const [isFormatting, setIsFormatting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [outputCollapsed, setOutputCollapsed] = useState(false);
+  const [collapsedLines, setCollapsedLines] = useState(() => new Set());
   const [notice, setNotice] = useState("");
   const inputRef = useRef(null);
   const dragDepth = useRef(0);
+  const foldRanges = useMemo(
+    () =>
+      result.formatted.split("\n").length <= 5000
+        ? findJsonFoldRanges(result.formatted)
+        : new Map(),
+    [result.formatted],
+  );
 
   useEffect(() => {
     if (!source.trim()) {
@@ -170,6 +222,10 @@ export default function JsonView() {
     const timer = window.setTimeout(() => setCopied(false), 1400);
     return () => window.clearTimeout(timer);
   }, [copied]);
+
+  useEffect(() => {
+    setCollapsedLines(new Set());
+  }, [result.formatted]);
 
   useEffect(() => {
     const enter = (event) => {
@@ -264,6 +320,21 @@ export default function JsonView() {
     setNotice("已采用修复后的 JSON");
   }
 
+  function toggleFold(lineIndex) {
+    setCollapsedLines((current) => {
+      const next = new Set(current);
+      if (next.has(lineIndex)) next.delete(lineIndex);
+      else next.add(lineIndex);
+      return next;
+    });
+  }
+
+  function toggleAllFolds() {
+    setCollapsedLines((current) =>
+      current.size ? new Set() : new Set(foldRanges.keys()),
+    );
+  }
+
   const inputLines = countLines(source);
   const inputBytes = new TextEncoder().encode(source).length;
   const status = result.error
@@ -348,17 +419,6 @@ export default function JsonView() {
             </button>
             <button
               type="button"
-              className="result-toggle"
-              onClick={() => setOutputCollapsed((value) => !value)}
-              aria-controls="json-output-pane"
-              aria-expanded={!outputCollapsed}
-              title={outputCollapsed ? "展开格式化结果" : "收起格式化结果"}
-            >
-              {outputCollapsed ? <PanelRightOpen size={14} /> : <ChevronDown size={14} />}
-              {outputCollapsed ? "展开结果" : "收起结果"}
-            </button>
-            <button
-              type="button"
               onClick={copyFormatted}
               disabled={!result.formatted}
               title="复制格式化结果"
@@ -387,7 +447,7 @@ export default function JsonView() {
           </div>
         </div>
 
-        <div className={`json-workspace ${outputCollapsed ? "output-collapsed" : ""}`}>
+        <div className="json-workspace">
           <section className="json-pane source-pane">
             <div className="pane-heading">
               <div>
@@ -412,48 +472,51 @@ export default function JsonView() {
             </div>
           </section>
 
-          {!outputCollapsed && (
-            <section className="json-pane output-pane" id="json-output-pane">
-              <div className="pane-heading">
-                <div>
-                  <span className="pane-label">OUTPUT</span>
-                  <strong>格式化结果</strong>
-                </div>
-                <div className="output-heading-actions">
-                  <span className={`validation-badge ${status.tone}`}>
-                    <i />
-                    {status.label}
-                  </span>
+          <section className="json-pane output-pane" id="json-output-pane">
+            <div className="pane-heading">
+              <div>
+                <span className="pane-label">OUTPUT</span>
+                <strong>格式化结果</strong>
+              </div>
+              <div className="output-heading-actions">
+                <span className={`validation-badge ${status.tone}`}>
+                  <i />
+                  {status.label}
+                </span>
+                {foldRanges.size > 0 && (
                   <button
                     type="button"
-                    className="pane-collapse-toggle"
-                    onClick={() => setOutputCollapsed(true)}
-                    title="收起格式化结果"
-                    aria-label="收起格式化结果"
+                    className="fold-all-button"
+                    onClick={toggleAllFolds}
+                    title={collapsedLines.size ? "展开全部层级" : "折叠全部层级"}
                   >
-                    <ChevronDown size={14} />
+                    {collapsedLines.size ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                    {collapsedLines.size ? "全部展开" : "全部折叠"}
                   </button>
-                </div>
-              </div>
-              <div className="json-output-scroll">
-                <JsonOutput
-                  result={result}
-                  isPending={isFormatting}
-                  onApplyRepair={applyRepairResult}
-                />
-              </div>
-              <div className="pane-footer result-stats">
-                <span>{result.empty ? "0 行" : `${countLines(result.formatted)} 行`}</span>
-                <span>{result.empty ? "0 bytes" : `${result.bytes.toLocaleString("zh-CN")} bytes`}</span>
-                {!result.empty && !result.error && (
-                  <>
-                    <span>{jsonTypeLabel(result.parsed)}</span>
-                    <span>{result.stats.keys} keys</span>
-                  </>
                 )}
               </div>
-            </section>
-          )}
+            </div>
+            <div className="json-output-scroll">
+              <JsonOutput
+                result={result}
+                isPending={isFormatting}
+                onApplyRepair={applyRepairResult}
+                foldRanges={foldRanges}
+                collapsedLines={collapsedLines}
+                onToggleFold={toggleFold}
+              />
+            </div>
+            <div className="pane-footer result-stats">
+              <span>{result.empty ? "0 行" : `${countLines(result.formatted)} 行`}</span>
+              <span>{result.empty ? "0 bytes" : `${result.bytes.toLocaleString("zh-CN")} bytes`}</span>
+              {!result.empty && !result.error && (
+                <>
+                  <span>{jsonTypeLabel(result.parsed)}</span>
+                  <span>{result.stats.keys} keys</span>
+                </>
+              )}
+            </div>
+          </section>
         </div>
 
         <div className="json-bottom-row">

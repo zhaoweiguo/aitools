@@ -175,3 +175,67 @@ export function countLines(value) {
   if (!value) return 0;
   return String(value).split(/\r?\n/).length;
 }
+
+export function findJsonFoldRanges(text) {
+  const source = String(text ?? "");
+  const ranges = new Map();
+  const stack = [];
+  let line = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+
+    if (character === "\n") {
+      line += 1;
+      continue;
+    }
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (character === "{" || character === "[") {
+      stack.push({
+        openChar: character,
+        startLine: line,
+      });
+      continue;
+    }
+
+    if (character !== "}" && character !== "]") continue;
+    const opened = stack.pop();
+    if (!opened || opened.startLine === line) continue;
+
+    const expected = opened.openChar === "{" ? "}" : "]";
+    if (character !== expected) continue;
+
+    const lineEnd = source.indexOf("\n", index);
+    const suffix = source
+      .slice(index + 1, lineEnd === -1 ? source.length : lineEnd)
+      .trim();
+
+    ranges.set(opened.startLine, {
+      startLine: opened.startLine,
+      endLine: line,
+      openChar: opened.openChar,
+      closeChar: character,
+      suffix,
+    });
+  }
+
+  return ranges;
+}
