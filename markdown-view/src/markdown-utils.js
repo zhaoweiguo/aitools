@@ -1,3 +1,5 @@
+import { parse as parseYaml } from "yaml";
+
 export function markdownStats(markdown) {
   const source = String(markdown ?? "");
   const cjk = source.match(/[\p{Script=Han}]/gu)?.length || 0;
@@ -52,7 +54,74 @@ export function slugifyHeading(text) {
   return slug || "section";
 }
 
-export const SAMPLE_MARKDOWN = `# Markdown Preview
+function frontMatterFieldCount(data) {
+  if (Array.isArray(data)) return data.length;
+  if (data && typeof data === "object") return Object.keys(data).length;
+  return data == null ? 0 : 1;
+}
+
+export function extractFrontMatter(markdown) {
+  const source = String(markdown ?? "").replace(/^\uFEFF/, "");
+  const match = source.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/);
+  if (!match) {
+    return {
+      present: false,
+      valid: false,
+      data: null,
+      raw: "",
+      content: source,
+      fieldCount: 0,
+      error: null,
+    };
+  }
+
+  const raw = match[1];
+  const content = source.slice(match[0].length).replace(/^\r?\n/, "");
+  try {
+    const data = parseYaml(raw);
+    return {
+      present: true,
+      valid: true,
+      data,
+      raw,
+      content,
+      fieldCount: frontMatterFieldCount(data),
+      error: null,
+    };
+  } catch (error) {
+    const line = error?.linePos?.[0]?.line ?? null;
+    const column = error?.linePos?.[0]?.col ?? null;
+    return {
+      present: true,
+      valid: false,
+      data: null,
+      raw,
+      content,
+      fieldCount: 0,
+      error: {
+        message: String(error?.message || error).split("\n")[0],
+        line,
+        column,
+      },
+    };
+  }
+}
+
+export const SAMPLE_MARKDOWN = `---
+title: Markdown Preview
+description: A local-first Markdown editor with live GFM rendering.
+date: 2026-11-27
+author:
+  name: AITools
+  url: https://aitool.zhaoweiguo.com/
+tags:
+  - markdown
+  - preview
+  - gfm
+draft: false
+---
+
+# Markdown Preview
 
 在左侧写 Markdown，右侧会实时渲染。
 

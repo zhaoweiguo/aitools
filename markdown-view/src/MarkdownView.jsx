@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   ArrowLeft,
   BookOpenText,
   Check,
@@ -19,6 +20,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  extractFrontMatter,
   extractMarkdownHeadings,
   markdownStats,
   SAMPLE_MARKDOWN,
@@ -46,8 +48,95 @@ function MarkdownHeading({ level, children }) {
   return <Tag id={id}>{children}</Tag>;
 }
 
-function MarkdownBody({ source }) {
-  if (!source.trim()) {
+function FrontMatterValue({ value }) {
+  if (value === null || value === undefined) {
+    return <span className="fm-null">null</span>;
+  }
+  if (typeof value === "boolean") {
+    return <span className={`fm-boolean ${value ? "true" : "false"}`}>{String(value)}</span>;
+  }
+  if (typeof value === "number") {
+    return <span className="fm-number">{value}</span>;
+  }
+  if (Array.isArray(value)) {
+    if (value.every((item) => ["string", "number", "boolean"].includes(typeof item))) {
+      return (
+        <span className="fm-tags">
+          {value.map((item, index) => <span key={index}>{String(item)}</span>)}
+        </span>
+      );
+    }
+    return <pre className="fm-json">{JSON.stringify(value, null, 2)}</pre>;
+  }
+  if (typeof value === "object") {
+    return <pre className="fm-json">{JSON.stringify(value, null, 2)}</pre>;
+  }
+  if (/^https?:\/\//.test(value)) {
+    return <a href={value} target="_blank" rel="noreferrer noopener">{value}</a>;
+  }
+  if (String(value).includes("\n")) {
+    return <pre className="fm-text">{value}</pre>;
+  }
+  return <span className="fm-string">{String(value)}</span>;
+}
+
+function FrontMatterPanel({ frontMatter }) {
+  if (!frontMatter.present) return null;
+  if (!frontMatter.valid) {
+    return (
+      <section className="frontmatter-panel has-error" aria-label="YAML Front Matter">
+        <div className="frontmatter-heading">
+          <div>
+            <span>YAML FRONT MATTER</span>
+            <strong>元数据解析失败</strong>
+          </div>
+          <span className="frontmatter-status error">ERROR</span>
+        </div>
+        <div className="frontmatter-error" role="alert">
+          <AlertTriangle size={16} />
+          <div>
+            <strong>YAML 格式有误，正文仍会继续预览</strong>
+            <p>{frontMatter.error?.message}</p>
+            {frontMatter.error?.line && (
+              <code>YAML 第 {frontMatter.error.line} 行，第 {frontMatter.error.column} 列</code>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const entries =
+    frontMatter.data && typeof frontMatter.data === "object" && !Array.isArray(frontMatter.data)
+      ? Object.entries(frontMatter.data)
+      : [["value", frontMatter.data]];
+  return (
+    <section className="frontmatter-panel" aria-label="YAML Front Matter">
+      <div className="frontmatter-heading">
+        <div>
+          <span>YAML FRONT MATTER</span>
+          <strong>文档元数据</strong>
+        </div>
+        <span className="frontmatter-status">{frontMatter.fieldCount} fields</span>
+      </div>
+      {entries.length ? (
+        <dl className="frontmatter-grid">
+          {entries.map(([key, value]) => (
+            <div className="frontmatter-row" key={key}>
+              <dt>{key}</dt>
+              <dd><FrontMatterValue value={value} /></dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <div className="frontmatter-empty">Front Matter 为空</div>
+      )}
+    </section>
+  );
+}
+
+function MarkdownBody({ source, frontMatter }) {
+  if (!source.trim() && !frontMatter.present) {
     return (
       <div className="markdown-empty">
         <span><BookOpenText size={28} /></span>
@@ -58,24 +147,31 @@ function MarkdownBody({ source }) {
   }
 
   return (
-    <article className="markdown-rendered">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h1: ({ children }) => <MarkdownHeading level={1}>{children}</MarkdownHeading>,
-          h2: ({ children }) => <MarkdownHeading level={2}>{children}</MarkdownHeading>,
-          h3: ({ children }) => <MarkdownHeading level={3}>{children}</MarkdownHeading>,
-          h4: ({ children }) => <MarkdownHeading level={4}>{children}</MarkdownHeading>,
-          h5: ({ children }) => <MarkdownHeading level={5}>{children}</MarkdownHeading>,
-          h6: ({ children }) => <MarkdownHeading level={6}>{children}</MarkdownHeading>,
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noreferrer noopener">{children}</a>
-          ),
-        }}
-      >
-        {source}
-      </ReactMarkdown>
-    </article>
+    <>
+      <FrontMatterPanel frontMatter={frontMatter} />
+      {source.trim() ? (
+        <article className="markdown-rendered">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h1: ({ children }) => <MarkdownHeading level={1}>{children}</MarkdownHeading>,
+              h2: ({ children }) => <MarkdownHeading level={2}>{children}</MarkdownHeading>,
+              h3: ({ children }) => <MarkdownHeading level={3}>{children}</MarkdownHeading>,
+              h4: ({ children }) => <MarkdownHeading level={4}>{children}</MarkdownHeading>,
+              h5: ({ children }) => <MarkdownHeading level={5}>{children}</MarkdownHeading>,
+              h6: ({ children }) => <MarkdownHeading level={6}>{children}</MarkdownHeading>,
+              a: ({ href, children }) => (
+                <a href={href} target="_blank" rel="noreferrer noopener">{children}</a>
+              ),
+            }}
+          >
+            {source}
+          </ReactMarkdown>
+        </article>
+      ) : (
+        <div className="markdown-body-empty">Front Matter 下方暂无正文</div>
+      )}
+    </>
   );
 }
 
@@ -100,7 +196,8 @@ export default function MarkdownView() {
   const [notice, setNotice] = useState("");
   const inputRef = useRef(null);
   const dragDepth = useRef(0);
-  const deferredSource = useDeferredValue(source);
+  const frontMatter = useMemo(() => extractFrontMatter(source), [source]);
+  const deferredSource = useDeferredValue(frontMatter.content);
 
   useEffect(() => {
     if (!copied) return undefined;
@@ -201,9 +298,12 @@ export default function MarkdownView() {
     setNotice("已加载示例 Markdown");
   }
 
-  const stats = useMemo(() => markdownStats(source), [source]);
-  const headings = useMemo(() => extractMarkdownHeadings(source), [source]);
-  const inputLines = stats.lines;
+  const stats = useMemo(() => markdownStats(frontMatter.content), [frontMatter.content]);
+  const headings = useMemo(
+    () => extractMarkdownHeadings(frontMatter.content),
+    [frontMatter.content],
+  );
+  const inputLines = source ? source.split(/\r?\n/).length : 0;
 
   return (
     <div className="markdown-shell">
@@ -333,13 +433,20 @@ export default function MarkdownView() {
                 <span className="markdown-pane-label">PREVIEW</span>
                 <strong>渲染预览</strong>
               </div>
-              <span className="markdown-outline-count">
-                <Heading2 size={12} />
-                {headings.length}
+              <span className="preview-heading-meta">
+                {frontMatter.present && (
+                  <span className={`frontmatter-count ${frontMatter.valid ? "" : "error"}`}>
+                    {frontMatter.valid ? `${frontMatter.fieldCount} fields` : "YAML error"}
+                  </span>
+                )}
+                <span className="markdown-outline-count">
+                  <Heading2 size={12} />
+                  {headings.length}
+                </span>
               </span>
             </div>
             <div className="markdown-preview-scroll">
-              <MarkdownBody source={deferredSource} />
+              <MarkdownBody source={deferredSource} frontMatter={frontMatter} />
             </div>
             <div className="markdown-pane-footer">
               <span>{stats.readMinutes ? `约 ${stats.readMinutes} 分钟阅读` : "0 词"}</span>

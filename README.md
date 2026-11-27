@@ -11,7 +11,7 @@ A collection of browser-local developer tools, published at
 | `/entry/` | Directory alias of the tool portal |
 | `/atif-view/` | ATIF v1.x trajectory viewer |
 | `/json-view/` | JSON formatter, validator, and tolerant repair preview |
-| `/markdown-view/` | Markdown editor and live GFM preview |
+| `/markdown-view/` | Markdown editor, YAML front matter, and live GFM preview |
 | `/time-view/` | Unix timestamp, Gregorian, and lunar calendar converter |
 
 All file parsing happens in the browser. Uploaded content is not sent to an
