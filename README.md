@@ -22,7 +22,7 @@ npm run build:standalone
 `build:standalone` writes `standalone/index.html`, a self-contained build with
 CSS, JavaScript, and the favicon inlined for single-file static hosting.
 
-Public preview: <https://c8727w.csb.app/>
+Public preview: <https://atif-lens.netlify.app/>
 
 ## Supported input
 

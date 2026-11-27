@@ -1,6 +1,7 @@
 node_modules/
 dist/
 standalone/
+build-release/
 .zcode-site/
 *.log
 .DS_Store
