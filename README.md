@@ -50,6 +50,9 @@ npm run build
 
 ## Deployment
 
+Pushing to `master` triggers `.github/workflows/deploy.yml`, which tests,
+builds all routes, and publishes `dist/` to Netlify.
+
 Netlify project: `xinxi-aitool`
 
 - Build command: `npm run build`
@@ -57,3 +60,4 @@ Netlify project: `xinxi-aitool`
 - Node version: 22
 - Production domain: `aitool.zhaoweiguo.com`
 - Netlify origin: <https://xinxi-aitool.netlify.app/>
+- GitHub secret: `NETLIFY_AUTH_TOKEN`
