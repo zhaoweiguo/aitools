@@ -1,6 +1,7 @@
 import {
   ArrowUpRight,
   Braces,
+  FileText,
   GitBranch,
   LockKeyhole,
   Sparkles,
@@ -32,6 +33,18 @@ const TOOLS = [
     icon: Braces,
     tone: "amber",
     tags: ["自动格式化", "语法检查", "复制下载", "完全本地"],
+  },
+  {
+    id: "markdown-view",
+    number: "03",
+    title: "Markdown View",
+    category: "Document preview",
+    description:
+      "编辑 Markdown 并实时查看渲染结果，支持 GitHub Flavored Markdown 扩展。",
+    href: "/markdown-view/",
+    icon: FileText,
+    tone: "blue",
+    tags: ["实时预览", "GFM", "文件导入", "完全本地"],
   },
 ];
 
@@ -93,6 +106,30 @@ function JsonPreview() {
   );
 }
 
+function MarkdownPreview() {
+  return (
+    <div className="preview-stage markdown-preview" aria-hidden="true">
+      <div className="preview-topline">
+        <span className="window-dots"><i /><i /><i /></span>
+        <span>notes.md</span>
+        <span className="preview-gfm">GFM</span>
+      </div>
+      <div className="markdown-mini-page">
+        <span className="md-preview-kicker">FIELD NOTES</span>
+        <strong>Build for clarity.</strong>
+        <p>Tools should stay quick, legible and close to the browser.</p>
+        <div className="md-preview-rule" />
+        <div className="md-preview-list">
+          <span><i />Write in Markdown</span>
+          <span><i />See it instantly</span>
+          <span><i />Keep data local</span>
+        </div>
+        <code><b>const</b> preview = <em>true</em>;</code>
+      </div>
+    </div>
+  );
+}
+
 function ToolCard({ tool }) {
   const Icon = tool.icon;
   return (
@@ -112,7 +149,9 @@ function ToolCard({ tool }) {
         <h2>{tool.title}</h2>
         <p>{tool.description}</p>
       </div>
-      {tool.id === "atif-view" ? <AtifPreview /> : <JsonPreview />}
+      {tool.id === "atif-view" && <AtifPreview />}
+      {tool.id === "json-view" && <JsonPreview />}
+      {tool.id === "markdown-view" && <MarkdownPreview />}
       <div className="tool-tags">
         {tool.tags.map((tag) => (
           <span key={tag}>{tag}</span>
@@ -146,7 +185,9 @@ export default function Portal() {
       <main className="portal-main">
         <section className="portal-intro">
           <div>
-            <span className="portal-eyebrow">TOOL INDEX / 02</span>
+            <span className="portal-eyebrow">
+              TOOL INDEX / {String(TOOLS.length).padStart(2, "0")}
+            </span>
             <h1>一个入口，处理手头的活。</h1>
             <p>
               面向日常研发、调试与数据检查的轻量工具集。文件在浏览器内处理，打开即用。

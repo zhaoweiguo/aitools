@@ -11,6 +11,7 @@ A collection of browser-local developer tools, published at
 | `/entry/` | Directory alias of the tool portal |
 | `/atif-view/` | ATIF v1.x trajectory viewer |
 | `/json-view/` | JSON formatter, validator, and tolerant repair preview |
+| `/markdown-view/` | Markdown editor and live GFM preview |
 
 All file parsing happens in the browser. Uploaded content is not sent to an
 application server.
@@ -18,10 +19,11 @@ application server.
 ## Structure
 
 ```text
-entry/       Portal source
-atif-view/   Existing trajectory viewer
-json-view/   JSON formatter
-public/      Shared static assets
+entry/          Portal source
+atif-view/      Existing trajectory viewer
+json-view/      JSON formatter
+markdown-view/  Markdown editor and live preview
+public/         Shared static assets
 ```
 
 The portal is available from both `index.html` and `entry/index.html`. Vite
@@ -40,6 +42,7 @@ Local routes:
 - <http://localhost:5173/entry/>
 - <http://localhost:5173/atif-view/>
 - <http://localhost:5173/json-view/>
+- <http://localhost:5173/markdown-view/>
 
 ## Verification
 

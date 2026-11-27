@@ -14,6 +14,7 @@ export default defineConfig({
         entry: resolve(process.cwd(), "entry/index.html"),
         atifView: resolve(process.cwd(), "atif-view/index.html"),
         jsonView: resolve(process.cwd(), "json-view/index.html"),
+        markdownView: resolve(process.cwd(), "markdown-view/index.html"),
       },
     },
   },
