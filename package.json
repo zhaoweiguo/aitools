@@ -1,14 +1,13 @@
 {
-  "name": "atif-trajectory-lens",
+  "name": "ai-tools-workbench",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "build:standalone": "vite build && node scripts/build-standalone.mjs",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test atif-view/tests/*.test.js json-view/tests/*.test.js"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

@@ -1,8 +1,31 @@
-# ATIF Lens
+# AITools
 
-ATIF Lens is a browser-based trajectory explorer for Agent Trajectory Interchange
-Format (ATIF v1.x) documents. It parses files locally in the browser and presents
-steps, tool calls, run metrics, and embedded subagent trajectories.
+A collection of browser-local developer tools, published at
+<https://aitool.zhaoweiguo.com/>.
+
+## Tools
+
+| Route | Description |
+|---|---|
+| `/` | Tool portal and index for future utilities |
+| `/entry/` | Directory alias of the tool portal |
+| `/atif-view/` | ATIF v1.x trajectory viewer |
+| `/json-view/` | JSON formatter, validator, and inspector |
+
+All file parsing happens in the browser. Uploaded content is not sent to an
+application server.
+
+## Structure
+
+```text
+entry/       Portal source
+atif-view/   Existing trajectory viewer
+json-view/   JSON formatter
+public/      Shared static assets
+```
+
+The portal is available from both `index.html` and `entry/index.html`. Vite
+builds all four HTML entries into `dist/`.
 
 ## Development
 
@@ -11,37 +34,26 @@ npm install
 npm run dev
 ```
 
+Local routes:
+
+- <http://localhost:5173/>
+- <http://localhost:5173/entry/>
+- <http://localhost:5173/atif-view/>
+- <http://localhost:5173/json-view/>
+
 ## Verification
 
 ```bash
 npm test
 npm run build
-npm run build:standalone
 ```
 
-`build:standalone` writes `standalone/index.html`, a self-contained build with
-CSS, JavaScript, and the favicon inlined for single-file static hosting.
+## Deployment
 
-Public Netlify origin: <https://xinxi-aitool.netlify.app/>
+Netlify project: `xinxi-aitool`
 
-Custom domain: `aitool.zhaoweiguo.com`
-
-The Netlify project is already configured for the custom domain. At the
-authoritative DNS provider, configure:
-
-```text
-Host: aitool
-Type: CNAME
-Value: xinxi-aitool.netlify.app
-TTL: 600
-```
-
-## Supported input
-
-- Standard ATIF JSON documents
-- ATIF JSONL exports with one `trajectory` header line and one `step` per line
-- Arrays of trajectories or an object with a `trajectories` array
-- Embedded `subagent_trajectories` and `subagent_trajectory_ref` links
-
-The viewer tolerates absent optional ATIF fields, but requires the root `agent`
-and `steps` fields. Tool argument keys support camelCase and snake_case variants.
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Node version: 22
+- Production domain: `aitool.zhaoweiguo.com`
+- Netlify origin: <https://xinxi-aitool.netlify.app/>
